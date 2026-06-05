@@ -1,0 +1,49 @@
+// MindCompass — Symptom Data
+// Weights: 1=mild, 2=moderate, 3=significant
+
+const SYMPTOMS = {
+  physical: [
+    { id: 'ph1', text: '💓 My heart races for no reason', anxiety: 3, burnout: 1 },
+    { id: 'ph2', text: '😴 I am always exhausted no matter how much I sleep', depression: 2, burnout: 3 },
+    { id: 'ph3', text: '🌙 I struggle to fall or stay asleep', anxiety: 2, depression: 2 },
+    { id: 'ph4', text: '🤢 I feel nauseous or have stomach issues when stressed', anxiety: 2 },
+    { id: 'ph5', text: '🤕 I get frequent headaches or body aches', anxiety: 1, burnout: 2 },
+    { id: 'ph6', text: '🍽️ My appetite has changed drastically (eating too much or too little)', depression: 2, anxiety: 1 },
+    { id: 'ph7', text: '😮💨 I sometimes feel like I cannot breathe properly', anxiety: 3 },
+    { id: 'ph8', text: '🥵 I sweat or feel shaky without physical exertion', anxiety: 2 },
+    { id: 'ph9', text: '⚡ I have low energy and feel drained all day', depression: 2, burnout: 3 },
+    { id: 'ph10', text: '🤸 I no longer enjoy physical activities I once liked', depression: 2 },
+  ],
+  emotional: [
+    { id: 'em1', text: '😶 I feel emotionally numb or disconnected', depression: 3, burnout: 2 },
+    { id: 'em2', text: '😡 I snap at people easily over small things', anxiety: 2, burnout: 2 },
+    { id: 'em3', text: '😨 I feel a sense of impending doom or dread', anxiety: 3 },
+    { id: 'em4', text: '😢 I cry often for no clear reason', depression: 3 },
+    { id: 'em5', text: '😔 I feel hopeless about the future', depression: 3 },
+    { id: 'em6', text: '😟 I worry constantly about things I cannot control', anxiety: 3 },
+    { id: 'em7', text: '🫥 I feel like a burden to the people around me', depression: 2 },
+    { id: 'em8', text: '🤯 I feel completely overwhelmed and do not know where to start', anxiety: 2, burnout: 3 },
+    { id: 'em9', text: '😞 I feel empty even when good things happen', depression: 3 },
+    { id: 'em10', text: '😤 I feel resentful or cynical about things I used to care about', burnout: 3 },
+  ],
+  cognitive: [
+    { id: 'co1', text: '🧠 I cannot concentrate or focus on tasks', anxiety: 2, depression: 2, burnout: 2 },
+    { id: 'co2', text: '🌀 My thoughts will not slow down, especially at night', anxiety: 3 },
+    { id: 'co3', text: '💔 I feel worthless or deeply inadequate', depression: 3 },
+    { id: 'co4', text: '🔁 I keep thinking about worst-case scenarios', anxiety: 3 },
+    { id: 'co5', text: '🧩 I forget things easily or feel mentally foggy', burnout: 3, depression: 2 },
+    { id: 'co6', text: '📉 My academic or work performance has dropped', depression: 2, burnout: 2 },
+    { id: 'co7', text: '🚶 I avoid social situations or cancel plans often', anxiety: 2, depression: 2 },
+    { id: 'co8', text: '😓 I feel guilty about things that are not my fault', depression: 2, anxiety: 1 },
+    { id: 'co9', text: '💭 I have thoughts of hurting myself or not wanting to exist', depression: 4, crisis: true },
+    { id: 'co10', text: '📱 I compare myself to others on social media and feel worse', depression: 2, anxiety: 1 },
+  ]
+};
+
+const DURATION_OPTIONS = [
+  { id: 'd1', text: 'Just today or the past few days', icon: '📅', weight: 0.5 },
+  { id: 'd2', text: 'On and off for a few weeks', icon: '📆', weight: 1 },
+  { id: 'd3', text: 'Most days for the past month', icon: '🗓️', weight: 1.5 },
+  { id: 'd4', text: 'Consistently for 2+ months', icon: '⏳', weight: 2 },
+  { id: 'd5', text: 'This has been my normal for a long time', icon: '🕐', weight: 2.5 },
+];

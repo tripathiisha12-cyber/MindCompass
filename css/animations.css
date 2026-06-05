@@ -1,0 +1,164 @@
+/* ============================================
+   MINDCOMPASS — KEYFRAME ANIMATIONS
+   ============================================ */
+
+/* === Entry Animations === */
+@keyframes fadeSlideUp {
+  from { opacity: 0; transform: translateY(28px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeSlideDown {
+  from { opacity: 0; transform: translateY(-20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.85); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+@keyframes slideInRight {
+  from { opacity: 0; transform: translateX(40px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes slideInLeft {
+  from { opacity: 0; transform: translateX(-40px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+/* === Breathing Circle === */
+@keyframes breatheExpand {
+  0%   { transform: scale(1);    opacity: 0.6; }
+  50%  { transform: scale(1.35); opacity: 1;   }
+  100% { transform: scale(1);    opacity: 0.6; }
+}
+
+@keyframes breatheRing {
+  0%   { transform: scale(0.95); opacity: 0.3; }
+  50%  { transform: scale(1.4);  opacity: 0.1; }
+  100% { transform: scale(0.95); opacity: 0.3; }
+}
+
+@keyframes breatheText {
+  0%, 100% { opacity: 0.5; }
+  50%       { opacity: 1; }
+}
+
+/* === Pulse / Glow === */
+@keyframes pulseGlow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(69,138,98,0.4); }
+  50%       { box-shadow: 0 0 0 12px rgba(69,138,98,0); }
+}
+
+@keyframes pulseGlowCrisis {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(192,57,43,0.5); }
+  50%       { box-shadow: 0 0 0 14px rgba(192,57,43,0); }
+}
+
+/* === Shimmer (skeleton loading) === */
+@keyframes shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+/* === Compass Needle === */
+@keyframes compassReveal {
+  0%   { transform: rotate(-90deg); }
+  70%  { transform: rotate(15deg);  }
+  85%  { transform: rotate(-8deg);  }
+  95%  { transform: rotate(4deg);   }
+  100% { transform: rotate(0deg);   }
+}
+
+@keyframes compassDial {
+  from { transform: rotate(0deg); opacity: 0; }
+  to   { transform: rotate(360deg); opacity: 1; }
+}
+
+/* === Float === */
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50%       { transform: translateY(-10px); }
+}
+
+@keyframes floatSlow {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50%       { transform: translateY(-16px) rotate(3deg); }
+}
+
+/* === Ripple === */
+@keyframes ripple {
+  from { transform: scale(0); opacity: 1; }
+  to   { transform: scale(4); opacity: 0; }
+}
+
+/* === Counter === */
+@keyframes countUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* === Check Mark === */
+@keyframes checkDraw {
+  from { stroke-dashoffset: 100; }
+  to   { stroke-dashoffset: 0; }
+}
+
+/* === Bounce In === */
+@keyframes bounceIn {
+  0%   { transform: scale(0.3);  opacity: 0; }
+  50%  { transform: scale(1.08); opacity: 1; }
+  70%  { transform: scale(0.93); }
+  100% { transform: scale(1); }
+}
+
+/* === Wave === */
+@keyframes wave {
+  0%, 100% { transform: scaleY(0.5); }
+  50%       { transform: scaleY(1.2); }
+}
+
+/* === Gradient Shift === */
+@keyframes gradientShift {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* === Animation Utility Classes === */
+.animate-fadeSlideUp    { animation: fadeSlideUp 0.6s ease both; }
+.animate-fadeIn         { animation: fadeIn 0.5s ease both; }
+.animate-scaleIn        { animation: scaleIn 0.4s cubic-bezier(0.34,1.56,0.64,1) both; }
+.animate-float          { animation: float 4s ease-in-out infinite; }
+.animate-floatSlow      { animation: floatSlow 6s ease-in-out infinite; }
+.animate-pulseGlow      { animation: pulseGlow 2s ease-in-out infinite; }
+.animate-bounceIn       { animation: bounceIn 0.6s cubic-bezier(0.36,0.07,0.19,0.97) both; }
+.animate-slideInRight   { animation: slideInRight 0.5s ease both; }
+.animate-slideInLeft    { animation: slideInLeft 0.5s ease both; }
+
+/* === Delay Utilities === */
+.delay-100 { animation-delay: 100ms; }
+.delay-200 { animation-delay: 200ms; }
+.delay-300 { animation-delay: 300ms; }
+.delay-400 { animation-delay: 400ms; }
+.delay-500 { animation-delay: 500ms; }
+.delay-600 { animation-delay: 600ms; }
+.delay-800 { animation-delay: 800ms; }
+
+/* === Intersection Observer Trigger === */
+.reveal {
+  opacity: 0;
+  transform: translateY(28px);
+  transition: opacity 0.7s ease, transform 0.7s ease;
+}
+.reveal.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
