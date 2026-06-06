@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { AlertCircle, ChevronDown, Phone, ExternalLink, Calendar, Users, HelpCircle, Check, ArrowRight } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { AlertCircle, ChevronDown, Phone, ExternalLink, Calendar, Users, HelpCircle, Check, ArrowRight, Compass } from 'lucide-react';
 import { useApp } from '@context/AppContext';
 
 const fadeUp = {
@@ -111,13 +111,81 @@ const FAQS = [
   }
 ];
 
+const INDIAN_HOSPITALS = {
+  delhi: [
+    { name: 'IHBAS (Institute of Human Behaviour & Allied Sciences)', phone: '011-29562411', address: 'Dilshad Garden, New Delhi' },
+    { name: 'AIIMS Psychiatry Emergency', phone: '011-26588500', address: 'Ansari Nagar, New Delhi' },
+    { name: 'Safdarjung Hospital Psychiatry Dept', phone: '011-26165606', address: 'Ansari Nagar, New Delhi' }
+  ],
+  mumbai: [
+    { name: 'Thane Mental Hospital', phone: '022-25822622', address: 'Thane West, Mumbai' },
+    { name: 'KEM Hospital Psychiatry Department', phone: '022-24107000', address: 'Parel, Mumbai' },
+    { name: 'Sion Hospital Psychiatry OPD', phone: '022-24076381', address: 'Sion, Mumbai' }
+  ],
+  bengaluru: [
+    { name: 'NIMHANS Emergency Services', phone: '080-26995000', address: 'Hosur Road, Bengaluru' },
+    { name: 'Victoria Hospital Psychiatry Block', phone: '080-26701150', address: 'Kalasipalya, Bengaluru' },
+    { name: 'Bowring Hospital Psychiatry Department', phone: '080-26703294', address: 'Shivajinagar, Bengaluru' }
+  ],
+  chennai: [
+    { name: 'Institute of Mental Health (IMH)', phone: '044-26426465', address: 'Medavakkam Tank Road, Kilpauk, Chennai' },
+    { name: 'Rajiv Gandhi Govt General Hospital', phone: '044-25305000', address: 'Park Town, Chennai' },
+    { name: 'Stanley Medical College Psychiatry', phone: '044-25281351', address: 'Royapuram, Chennai' }
+  ],
+  kolkata: [
+    { name: 'Calcutta Pavlov Hospital', phone: '033-22861214', address: 'Gobra, Kolkata' },
+    { name: 'Institute of Psychiatry (COE)', phone: '033-22238435', address: 'Bhowanipore, Kolkata' },
+    { name: 'SSKM Hospital Psychiatry Dept', phone: '033-22041100', address: 'Acharya Jagadish Chandra Bose Road, Kolkata' }
+  ]
+};
+
 export default function ProfessionalPortal() {
   const navigate = useNavigate();
   const { showCrisisModal } = useApp();
   const [openFaq, setOpenFaq] = useState(null);
+  const [geoLoading, setGeoLoading] = useState(false);
+  const [geoError, setGeoError] = useState(null);
+  const [selectedCity, setSelectedCity] = useState('');
 
   const toggleFaq = (index) => {
     setOpenFaq(openFaq === index ? null : index);
+  };
+
+  const handleFindNearbyHospitals = () => {
+    setGeoLoading(true);
+    setGeoError(null);
+
+    if (!navigator.geolocation) {
+      setGeoError('Geolocation is not supported by your browser.');
+      setGeoLoading(false);
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const { latitude, longitude } = position.coords;
+        setGeoLoading(false);
+        // Direct search query coordinates link
+        window.open(`https://www.google.com/maps/search/?api=1&query=psychiatric+hospital+near+me&location=${latitude},${longitude}`, '_blank', 'noopener,noreferrer');
+      },
+      (error) => {
+        setGeoLoading(false);
+        switch (error.code) {
+          case error.PERMISSION_DENIED:
+            setGeoError('Location permission denied. Please select a city manually from the fallback menu below.');
+            break;
+          case error.POSITION_UNAVAILABLE:
+            setGeoError('Location details are currently unavailable.');
+            break;
+          case error.TIMEOUT:
+            setGeoError('Location check timed out.');
+            break;
+          default:
+            setGeoError('An unknown error occurred.');
+        }
+      },
+      { timeout: 8000 }
+    );
   };
 
   return (
@@ -159,6 +227,119 @@ export default function ProfessionalPortal() {
           </motion.button>
         </div>
       </div>
+
+      {/* ── EMERGENCY & NEARBY HOSPITAL FINDER ── */}
+      <section className="section-pad" style={{ background: 'var(--color-surface)' }}>
+        <div className="container">
+          <div className="card" style={{ maxWidth: '640px', margin: '0 auto', borderLeft: '5px solid var(--crisis-red)', padding: 'var(--space-6)', boxShadow: 'var(--shadow-md)' }}>
+            <h3 style={{ fontSize: 'var(--text-xl)', fontWeight: 700, color: 'var(--slate-800)', marginBottom: 'var(--space-2)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span style={{ fontSize: '1.5rem' }}>🚨</span> Find Nearby Psychiatric & Emergency Hospitals
+            </h3>
+            <p style={{ color: 'var(--color-text-muted)', fontSize: 'var(--text-sm)', lineHeight: '1.5', marginBottom: 'var(--space-5)' }}>
+              If you or someone you know is experiencing a psychiatric crisis, immediate help is critical. 
+              Click below to locate nearby emergency medical centers and government hospitals on Google Maps.
+            </p>
+
+            <div style={{ display: 'flex', gap: 'var(--space-4)', flexWrap: 'wrap', marginBottom: 'var(--space-4)' }}>
+              <button 
+                className="btn btn-primary" 
+                onClick={handleFindNearbyHospitals}
+                disabled={geoLoading}
+                style={{ background: 'var(--crisis-red)', borderColor: 'var(--crisis-red)', display: 'flex', alignItems: 'center', gap: '8px' }}
+              >
+                {geoLoading ? 'Acquiring Coordinates...' : '🔍 Find Nearby Hospitals'}
+              </button>
+            </div>
+
+            {geoError && (
+              <div className="alert alert-danger" style={{ fontSize: 'var(--text-xs)', display: 'flex', gap: '8px', alignItems: 'center', marginBottom: 'var(--space-5)' }}>
+                <AlertCircle size={14} style={{ flexShrink: 0 }} />
+                <span>{geoError}</span>
+              </div>
+            )}
+
+            <div style={{ borderTop: '1px solid var(--gray-200)', paddingTop: 'var(--space-5)', marginTop: 'var(--space-5)' }}>
+              <label style={{ display: 'block', fontSize: 'var(--text-xs)', fontWeight: 600, color: 'var(--gray-700)', marginBottom: 'var(--space-2)' }}>
+                Fallback: Major Indian Metro Directories
+              </label>
+              <select 
+                value={selectedCity} 
+                onChange={(e) => setSelectedCity(e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: '10px 12px',
+                  border: '1px solid var(--gray-300)',
+                  borderRadius: 'var(--radius-md)',
+                  outline: 'none',
+                  fontSize: '0.9rem',
+                  backgroundColor: 'white',
+                  marginBottom: 'var(--space-3)',
+                  cursor: 'pointer'
+                }}
+              >
+                <option value="">-- Choose City --</option>
+                <option value="delhi">Delhi / NCR</option>
+                <option value="mumbai">Mumbai</option>
+                <option value="bengaluru">Bengaluru</option>
+                <option value="chennai">Chennai</option>
+                <option value="kolkata">Kolkata</option>
+              </select>
+
+              <AnimatePresence>
+                {selectedCity && INDIAN_HOSPITALS[selectedCity] && (
+                  <motion.div 
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                    transition={{ duration: 0.25 }}
+                    style={{ overflow: 'hidden' }}
+                  >
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)', marginTop: 'var(--space-3)' }}>
+                      {INDIAN_HOSPITALS[selectedCity].map((h, i) => (
+                        <div 
+                          key={i} 
+                          style={{ 
+                            padding: 'var(--space-4)', 
+                            background: 'white', 
+                            border: '1px solid var(--gray-200)', 
+                            borderRadius: 'var(--radius-md)', 
+                            display: 'flex', 
+                            justifyContent: 'space-between', 
+                            alignItems: 'center', 
+                            gap: 'var(--space-3)' 
+                          }}
+                        >
+                          <div>
+                            <div style={{ fontWeight: 750, fontSize: 'var(--text-sm)', color: 'var(--slate-800)' }}>{h.name}</div>
+                            <div style={{ fontSize: '0.78rem', color: 'var(--color-text-muted)', marginTop: '3px' }}>📍 {h.address}</div>
+                          </div>
+                          <a 
+                            href={`tel:${h.phone.replace(/-/g, '')}`}
+                            className="btn btn-secondary btn-sm"
+                            style={{ 
+                              display: 'flex', 
+                              alignItems: 'center', 
+                              gap: '4px', 
+                              whiteSpace: 'nowrap', 
+                              border: '1px solid var(--sage-200)', 
+                              color: 'var(--sage-700)', 
+                              background: 'var(--sage-50)',
+                              fontSize: 'var(--text-xs)',
+                              fontWeight: 600
+                            }}
+                          >
+                            <Phone size={12} /> Call: {h.phone}
+                          </a>
+                        </div>
+                      ))}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          </div>
+        </div>
+      </section>
 
       {/* ── PSYCHIATRIST VS PSYCHOLOGIST ── */}
       <section className="section-pad" style={{ background: 'white' }}>

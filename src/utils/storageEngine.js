@@ -1,4 +1,14 @@
-const STORAGE_KEY = 'mc_wellness_data';
+export function getActiveUser() {
+  return localStorage.getItem('mc_active_user') || 'guest';
+}
+
+export function getStorageKey() {
+  return `mc_wellness_data_${getActiveUser()}`;
+}
+
+export function getResultKey() {
+  return `mc_last_result_${getActiveUser()}`;
+}
 
 function encode(data) {
   try { return btoa(unescape(encodeURIComponent(JSON.stringify(data)))); }
@@ -16,7 +26,7 @@ export function getTodayKey() {
 }
 
 function getAllLogs() {
-  const raw = localStorage.getItem(STORAGE_KEY);
+  const raw = localStorage.getItem(getStorageKey());
   if (!raw) return {};
   return decode(raw) || {};
 }
@@ -25,8 +35,9 @@ export function saveDailyLog(log) {
   const all = getAllLogs();
   const key = getTodayKey();
   all[key] = { ...all[key], ...log, date: key };
-  localStorage.setItem(STORAGE_KEY, encode(all));
+  localStorage.setItem(getStorageKey(), encode(all));
 }
+
 
 export function getTodayLog() {
   return getAllLogs()[getTodayKey()] || {};

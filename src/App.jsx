@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { Routes, Route, useLocation } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
-import { AppProvider } from '@context/AppContext';
+import { AppProvider, useApp } from '@context/AppContext';
 import Navbar from '@components/layout/Navbar';
 import DisclaimerBanner from '@components/layout/DisclaimerBanner';
 import CrisisModal from '@components/modals/CrisisModal';
@@ -10,17 +10,33 @@ import SymptomChecker from '@pages/SymptomChecker';
 import CompassReport from '@pages/CompassReport';
 import ProfessionalPortal from '@pages/ProfessionalPortal';
 import WellnessTracker from '@pages/WellnessTracker';
+import Auth from '@pages/Auth';
 
 function ScrollToTop() {
   const { pathname } = useLocation();
-  useEffect(() => { window.scrollTo({ top: 0, behavior: 'instant' }); }, [pathname]);
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'instant' });
+  }, [pathname]);
   return null;
 }
 
-export default function App() {
+function AppContent() {
   const location = useLocation();
+  const { currentUser } = useApp();
+
+  // Route Guard: Show authentication if user is not logged in
+  if (!currentUser) {
+    return (
+      <>
+        <CrisisModal />
+        <Auth />
+        <DisclaimerBanner />
+      </>
+    );
+  }
+
   return (
-    <AppProvider>
+    <>
       <ScrollToTop />
       <Navbar />
       <CrisisModal />
@@ -37,6 +53,14 @@ export default function App() {
         </AnimatePresence>
       </main>
       <DisclaimerBanner />
+    </>
+  );
+}
+
+export default function App() {
+  return (
+    <AppProvider>
+      <AppContent />
     </AppProvider>
   );
 }
