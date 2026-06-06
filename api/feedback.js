@@ -14,11 +14,14 @@ export default async function handler(req, res) {
   }
 
   try {
-    const urlObj = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
-    const subpath = urlObj.pathname.replace(/^\/api\/feedback/, '');
+    let pathSegment = req.query.path;
+    if (!pathSegment) {
+      const urlObj = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
+      pathSegment = urlObj.pathname.replace(/^\/api\/feedback/, '').replace(/^\//, '');
+    }
     
     // Construct the destination URL
-    const destinationUrl = `https://keyvalue.immanuel.co/api/KeyVal${subpath}${urlObj.search}`;
+    const destinationUrl = `https://keyvalue.immanuel.co/api/KeyVal/${pathSegment}`;
     
     // Forward the request to the key-value store
     const fetchOptions = {
