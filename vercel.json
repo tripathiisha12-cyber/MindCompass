@@ -3,7 +3,7 @@
   "rewrites": [
     {
       "source": "/api/feedback-sync/:path*",
-      "destination": "/api/feedback?path=:path*"
+      "destination": "/api/feedback.js?path=:path*"
     },
     {
       "source": "/((?!api/).*)",
