@@ -35,7 +35,7 @@ export default function Feedback() {
   }, []);
 
   const APP_KEY = 'i9upbo45';
-  const BASE_URL = '/api/feedback';
+  const BASE_URL = '/api/feedback-sync';
 
   function base64UrlEncode(str) {
     const base64 = btoa(unescape(encodeURIComponent(str)));

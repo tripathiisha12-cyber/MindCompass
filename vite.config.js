@@ -18,10 +18,10 @@ export default defineConfig({
     port: 3000,
     open: true,
     proxy: {
-      '/api/feedback': {
+      '/api/feedback-sync': {
         target: 'https://keyvalue.immanuel.co/api/KeyVal',
         changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api\/feedback/, ''),
+        rewrite: (path) => path.replace(/^\/api\/feedback-sync/, ''),
       },
     },
   },

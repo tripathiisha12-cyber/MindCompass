@@ -2,7 +2,7 @@
   "cleanUrls": true,
   "rewrites": [
     {
-      "source": "/api/feedback/:path*",
+      "source": "/api/feedback-sync/:path*",
       "destination": "/api/feedback?path=:path*"
     },
     {
