@@ -122,13 +122,35 @@ export default function Home() {
 
         {/* Compass illustration */}
         <div className="hero-visual" aria-hidden="true">
-          <div className="compass-illustration">
+          <div className="compass-illustration" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
             <motion.div
               className="compass-outer"
               animate={{ y: [0, -12, 0] }}
               transition={{ repeat: Infinity, duration: 6, ease: 'easeInOut' }}
+              style={{
+                width: '320px',
+                height: '320px',
+                borderRadius: '50%',
+                background: 'rgba(255, 255, 255, 0.4)',
+                backdropFilter: 'blur(10px)',
+                border: '2px solid rgba(255, 255, 255, 0.6)',
+                boxShadow: 'var(--shadow-xl)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: 'var(--space-4)'
+              }}
             >
-              <div className="compass-face" style={{ fontSize: '5rem' }}>🧭</div>
+              <img 
+                src="/cute_compass_mascot.png" 
+                alt="Cute meditating compass companion" 
+                style={{
+                  width: '95%',
+                  height: '95%',
+                  objectFit: 'contain',
+                  filter: 'drop-shadow(0px 8px 16px rgba(0,0,0,0.1))'
+                }}
+              />
             </motion.div>
           </div>
         </div>

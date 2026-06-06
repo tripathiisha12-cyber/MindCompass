@@ -5,6 +5,7 @@ import { AppProvider } from '@context/AppContext';
 import Navbar from '@components/layout/Navbar';
 import DisclaimerBanner from '@components/layout/DisclaimerBanner';
 import CrisisModal from '@components/modals/CrisisModal';
+import AIAssistant from '@components/AIAssistant';
 import Home from '@pages/Home';
 import SymptomChecker from '@pages/SymptomChecker';
 import CompassReport from '@pages/CompassReport';
@@ -40,6 +41,7 @@ function AppContent() {
         </AnimatePresence>
       </main>
       <DisclaimerBanner />
+      <AIAssistant />
     </>
   );
 }
