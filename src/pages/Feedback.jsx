@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { MessageSquare, Star, CheckCircle, Heart, Trash2, AlertCircle } from 'lucide-react';
+import { MessageSquare, CheckCircle, Trash2, Globe, HardDrive } from 'lucide-react';
 
 const EMOJI_RATINGS = [
   { emoji: '😢', label: 'Needs work', value: 1 },
@@ -12,18 +12,38 @@ const EMOJI_RATINGS = [
 
 const CATEGORIES = ['🎨 UI/UX Design', '💬 AI Assistant (Aura)', '🧭 Symptom Check', '🏥 Find Help', '📈 Daily Tracker', '🚀 Other'];
 
+const LOCAL_KEY = 'mindcompass_feedback_logs';
+
+function saveFeedbackLocally(feedback) {
+  try {
+    const existing = JSON.parse(localStorage.getItem(LOCAL_KEY) || '[]');
+    const updated = [feedback, ...existing];
+    localStorage.setItem(LOCAL_KEY, JSON.stringify(updated));
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function loadFeedbackLocally() {
+  try {
+    return JSON.parse(localStorage.getItem(LOCAL_KEY) || '[]');
+  } catch {
+    return [];
+  }
+}
+
 export default function Feedback() {
   const [rating, setRating] = useState(null);
   const [hoverRating, setHoverRating] = useState(null);
   const [selectedCategories, setSelectedCategories] = useState([]);
   const [comments, setComments] = useState('');
-  const [userName, setUserName] = useState(''); // Default empty for users to type their name
+  const [userName, setUserName] = useState('');
   const [submittedLogs, setSubmittedLogs] = useState([]);
   const [success, setSuccess] = useState(false);
-  const [error, setError] = useState(null);
-  const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [isDevMode, setIsDevMode] = useState(false);
+  const [formError, setFormError] = useState(null);
 
   const DEV_PASSCODE = 'ishaadmin';
 
@@ -32,80 +52,9 @@ export default function Feedback() {
     if (params.get('dev') === 'true' || params.get('admin') === 'true') {
       setIsDevMode(true);
     }
-  }, []);
-
-  const APP_KEY = 'i9upbo45';
-  const BASE_URL = '/api/feedback-sync';
-
-  function base64UrlEncode(str) {
-    const base64 = btoa(unescape(encodeURIComponent(str)));
-    return base64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
-  }
-
-  function base64UrlDecode(str) {
-    let base64 = str.replace(/-/g, '+').replace(/_/g, '/');
-    while (base64.length % 4) {
-      base64 += '=';
-    }
-    return decodeURIComponent(escape(atob(base64)));
-  }
-
-  // Load existing feedback logs on mount
-  useEffect(() => {
-    async function loadFeedback() {
-      setLoading(true);
-      setError(null);
-      try {
-        const countRes = await fetch(`${BASE_URL}/GetValue/${APP_KEY}/count`);
-        if (!countRes.ok) {
-          setError('Failed to contact global database.');
-          setLoading(false);
-          return;
-        }
-        
-        const countStr = await countRes.json();
-        const count = countStr ? parseInt(countStr, 10) : 0;
-        
-        if (isNaN(count) || count <= 0) {
-          setSubmittedLogs([]);
-          setLoading(false);
-          return;
-        }
-
-        const fetchPromises = [];
-        for (let i = 0; i < count; i++) {
-          fetchPromises.push(
-            fetch(`${BASE_URL}/GetValue/${APP_KEY}/feedback-${i}`)
-              .then(res => res.ok ? res.json() : null)
-              .catch(() => null)
-          );
-        }
-
-        const results = await Promise.all(fetchPromises);
-        const logs = [];
-        for (let i = 0; i < results.length; i++) {
-          const rawValue = results[i];
-          if (rawValue) {
-            try {
-              const decodedStr = base64UrlDecode(rawValue);
-              const parsed = JSON.parse(decodedStr);
-              logs.push(parsed);
-            } catch (err) {
-              console.error('Failed to parse feedback item', i, err);
-            }
-          }
-        }
-        
-        logs.reverse();
-        setSubmittedLogs(logs);
-      } catch (e) {
-        console.error('Failed to load feedback logs', e);
-        setError('Connection error: could not load global feedback.');
-      } finally {
-        setLoading(false);
-      }
-    }
-    loadFeedback();
+    // Load from localStorage immediately — always works
+    const local = loadFeedbackLocally();
+    setSubmittedLogs(local);
   }, []);
 
   const toggleCategory = (cat) => {
@@ -114,41 +63,29 @@ export default function Feedback() {
     );
   };
 
-  const handleClearHistory = async () => {
-    const passcode = window.prompt("Please enter the developer passcode to clear all global feedback submissions:");
+  const handleClearHistory = () => {
+    const passcode = window.prompt("Enter the developer passcode to clear all feedback:");
     if (passcode === null) return;
     if (passcode.trim() !== DEV_PASSCODE) {
-      alert("Invalid developer passcode. Access denied.");
+      alert("Invalid passcode. Access denied.");
       return;
     }
-
-    if (!window.confirm("Are you sure you want to clear all global feedback submissions for everyone?")) {
-      return;
-    }
-    setLoading(true);
-    try {
-      const res = await fetch(`${BASE_URL}/UpdateValue/${APP_KEY}/count/0`, {
-        method: 'POST'
-      });
-      if (res.ok) {
-        setSubmittedLogs([]);
-      } else {
-        setError('Failed to clear global logs.');
-      }
-    } catch (e) {
-      setError('Connection error: failed to reset global logs.');
-    } finally {
-      setLoading(false);
-    }
+    if (!window.confirm("Clear ALL saved feedback entries?")) return;
+    localStorage.removeItem(LOCAL_KEY);
+    setSubmittedLogs([]);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError(null);
+    setFormError(null);
     setSuccess(false);
 
     if (!rating) {
-      setError('Please select a rating emoji before submitting.');
+      setFormError('Please select a rating emoji before submitting.');
+      return;
+    }
+    if (!comments.trim()) {
+      setFormError('Please write some feedback before submitting.');
       return;
     }
 
@@ -168,52 +105,25 @@ export default function Feedback() {
     };
 
     setSubmitting(true);
-    try {
-      const countRes = await fetch(`${BASE_URL}/GetValue/${APP_KEY}/count`);
-      let count = 0;
-      if (countRes.ok) {
-        const countStr = await countRes.json();
-        count = countStr ? parseInt(countStr, 10) : 0;
-        if (isNaN(count)) count = 0;
-      }
 
-      const encodedFeedback = base64UrlEncode(JSON.stringify(newFeedback));
+    // Always save locally first — this always works
+    saveFeedbackLocally(newFeedback);
+    setSubmittedLogs(loadFeedbackLocally());
 
-      const writeFeedbackRes = await fetch(`${BASE_URL}/UpdateValue/${APP_KEY}/feedback-${count}/${encodedFeedback}`, {
-        method: 'POST'
-      });
-
-      if (!writeFeedbackRes.ok) {
-        setError('Failed to upload feedback to global database.');
-        setSubmitting(false);
-        return;
-      }
-
-      const updateCountRes = await fetch(`${BASE_URL}/UpdateValue/${APP_KEY}/count/${count + 1}`, {
-        method: 'POST'
-      });
-
-      if (updateCountRes.ok) {
-        setSubmittedLogs(prev => [newFeedback, ...prev]);
-        setRating(null);
-        setSelectedCategories([]);
-        setComments('');
-        setSuccess(true);
-        setTimeout(() => setSuccess(false), 5000);
-      } else {
-        setError('Failed to update global database count.');
-      }
-    } catch (e) {
-      setError('Connection error: failed to submit feedback.');
-    } finally {
-      setSubmitting(false);
-    }
+    // Show success immediately
+    setRating(null);
+    setSelectedCategories([]);
+    setComments('');
+    setUserName('');
+    setSuccess(true);
+    setSubmitting(false);
+    setTimeout(() => setSuccess(false), 6000);
   };
 
   return (
     <div className="page-wrapper" style={{ background: 'var(--color-bg)', minHeight: '100vh', padding: 'var(--space-12) 0' }}>
       <div className="container-sm" style={{ maxWidth: '680px', margin: '0 auto', padding: '0 var(--space-4)' }}>
-        
+
         {/* Header */}
         <div style={{ textAlign: 'center', marginBottom: 'var(--space-8)' }}>
           <span className="section-label" style={{ background: 'var(--sage-100)', color: 'var(--sage-700)', padding: '4px 12px', borderRadius: 'var(--radius-full)' }}>
@@ -223,30 +133,30 @@ export default function Feedback() {
             Share your thoughts with Isha 🌸
           </h1>
           <p style={{ color: 'var(--color-text-muted)', fontSize: 'var(--text-base)', marginTop: 'var(--space-2)' }}>
-            We'd love to hear your feedback on the new mascot, AI wellness assistant, and general features.
+            We'd love to hear your feedback on the mascot, AI wellness assistant, and features.
           </p>
         </div>
 
         {/* Feedback Card Form */}
         <div className="card animate-fadeSlideUp" style={{ padding: 'var(--space-8)', boxShadow: 'var(--shadow-xl)', background: 'white', borderRadius: 'var(--radius-2xl)', border: '1px solid var(--gray-100)' }}>
-          
+
           <AnimatePresence>
             {success && (
-              <motion.div 
+              <motion.div
                 className="alert alert-success"
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0 }}
-                style={{ 
-                  display: 'flex', 
-                  flexDirection: 'column', 
-                  gap: '10px', 
-                  padding: '16px', 
-                  backgroundColor: '#f0fdf4', 
-                  border: '1.5px solid #bbf7d0', 
-                  color: '#166534', 
-                  borderRadius: '12px', 
-                  marginBottom: 'var(--space-6)' 
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '10px',
+                  padding: '16px',
+                  backgroundColor: '#f0fdf4',
+                  border: '1.5px solid #bbf7d0',
+                  color: '#166534',
+                  borderRadius: '12px',
+                  marginBottom: 'var(--space-6)'
                 }}
               >
                 <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
@@ -258,32 +168,41 @@ export default function Feedback() {
                 </p>
               </motion.div>
             )}
-            {error && (
-              <motion.div 
-                className="alert alert-danger"
+            {formError && (
+              <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: 'var(--space-6)' }}
+                style={{
+                  display: 'flex',
+                  gap: '8px',
+                  alignItems: 'center',
+                  padding: '12px 14px',
+                  backgroundColor: '#fef2f2',
+                  border: '1.5px solid #fecaca',
+                  color: '#dc2626',
+                  borderRadius: '10px',
+                  fontSize: '0.88rem',
+                  marginBottom: 'var(--space-6)'
+                }}
               >
-                <AlertCircle size={18} style={{ flexShrink: 0 }} />
-                <span>{error}</span>
+                ⚠️ {formError}
               </motion.div>
             )}
           </AnimatePresence>
 
           <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-6)' }}>
-            
+
             {/* User Name */}
             <div>
               <label style={{ display: 'block', fontSize: 'var(--text-sm)', fontWeight: 600, color: 'var(--slate-700)', marginBottom: 'var(--space-2)' }}>
                 Your Name
               </label>
-              <input 
-                type="text" 
-                value={userName} 
+              <input
+                type="text"
+                value={userName}
                 onChange={(e) => setUserName(e.target.value)}
-                placeholder="Enter your name"
+                placeholder="Enter your name (optional)"
                 style={{
                   width: '100%',
                   padding: '10px 14px',
@@ -299,7 +218,7 @@ export default function Feedback() {
             {/* Emoji Rating */}
             <div>
               <label style={{ display: 'block', fontSize: 'var(--text-sm)', fontWeight: 600, color: 'var(--slate-700)', marginBottom: 'var(--space-2)' }}>
-                How would you rate your experience?
+                How would you rate your experience? <span style={{ color: '#dc2626' }}>*</span>
               </label>
               <div style={{ display: 'flex', justifyContent: 'space-between', gap: '8px', padding: 'var(--space-3) 0' }}>
                 {EMOJI_RATINGS.map((r) => {
@@ -376,14 +295,13 @@ export default function Feedback() {
             {/* Comments */}
             <div>
               <label style={{ display: 'block', fontSize: 'var(--text-sm)', fontWeight: 600, color: 'var(--slate-700)', marginBottom: 'var(--space-2)' }}>
-                Detailed Feedback / Suggestions
+                Detailed Feedback / Suggestions <span style={{ color: '#dc2626' }}>*</span>
               </label>
               <textarea
                 value={comments}
                 onChange={(e) => setComments(e.target.value)}
                 placeholder="What did you like? What can we do better? Feel free to type anything..."
                 rows={4}
-                required
                 style={{
                   width: '100%',
                   padding: '12px 14px',
@@ -398,8 +316,8 @@ export default function Feedback() {
               />
             </div>
 
-            <button 
-              type="submit" 
+            <button
+              type="submit"
               className="btn btn-primary"
               disabled={submitting}
               style={{
@@ -414,8 +332,8 @@ export default function Feedback() {
                 marginTop: 'var(--space-2)'
               }}
             >
-              <MessageSquare size={18} /> 
-              {submitting ? 'Publishing Feedback...' : 'Submit Feedback'}
+              <MessageSquare size={18} />
+              {submitting ? 'Saving...' : 'Submit Feedback'}
             </button>
           </form>
         </div>
@@ -424,10 +342,11 @@ export default function Feedback() {
         <div style={{ marginTop: 'var(--space-12)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-5)' }}>
             <h3 style={{ fontSize: 'var(--text-lg)', fontWeight: 700, color: 'var(--slate-800)', display: 'flex', alignItems: 'center', gap: '8px', margin: 0 }}>
-              📝 Past Submissions ({submittedLogs.length})
+              <HardDrive size={16} style={{ color: 'var(--sage-500)' }} />
+              Past Submissions ({submittedLogs.length})
             </h3>
             {isDevMode && submittedLogs.length > 0 && (
-              <button 
+              <button
                 onClick={handleClearHistory}
                 style={{
                   background: 'none',
@@ -440,8 +359,8 @@ export default function Feedback() {
                   gap: '4px',
                   transition: 'color 0.2s'
                 }}
-                onMouseEnter={(e) => e.target.style.color = 'var(--crisis-red)'}
-                onMouseLeave={(e) => e.target.style.color = 'var(--gray-400)'}
+                onMouseEnter={(e) => e.currentTarget.style.color = '#dc2626'}
+                onMouseLeave={(e) => e.currentTarget.style.color = 'var(--gray-400)'}
               >
                 <Trash2 size={12} /> Clear History (Dev Only)
               </button>
@@ -449,26 +368,8 @@ export default function Feedback() {
           </div>
 
           <AnimatePresence mode="wait">
-            {loading ? (
-              <motion.div 
-                key="loading-fb"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                style={{
-                  textAlign: 'center',
-                  padding: 'var(--space-8) var(--space-4)',
-                  backgroundColor: 'white',
-                  borderRadius: 'var(--radius-xl)',
-                  border: '1.5px dashed var(--gray-200)',
-                  color: 'var(--color-text-muted)',
-                  fontSize: 'var(--text-sm)'
-                }}
-              >
-                🔄 Loading shared feedback logs...
-              </motion.div>
-            ) : submittedLogs.length === 0 ? (
-              <motion.div 
+            {submittedLogs.length === 0 ? (
+              <motion.div
                 key="empty-fb"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
@@ -515,19 +416,19 @@ export default function Feedback() {
                         {log.categories && log.categories.length > 0 && (
                           <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
                             {log.categories.map((cat, idx) => (
-                              <span 
-                                key={idx} 
-                                style={{ 
-                                  fontSize: '0.68rem', 
-                                  background: 'var(--sage-50)', 
-                                  border: '1px solid var(--sage-100)', 
-                                  color: 'var(--sage-700)', 
-                                  padding: '2px 8px', 
+                              <span
+                                key={idx}
+                                style={{
+                                  fontSize: '0.68rem',
+                                  background: 'var(--sage-50)',
+                                  border: '1px solid var(--sage-100)',
+                                  color: 'var(--sage-700)',
+                                  padding: '2px 8px',
                                   borderRadius: 'var(--radius-full)',
                                   fontWeight: 600
                                 }}
                               >
-                                {cat.split(' ').slice(1).join(' ') /* Strip emoji */}
+                                {cat.split(' ').slice(1).join(' ')}
                               </span>
                             ))}
                           </div>
