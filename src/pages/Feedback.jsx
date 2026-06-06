@@ -21,17 +21,35 @@ export default function Feedback() {
   const [submittedLogs, setSubmittedLogs] = useState([]);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+
+  const KVDB_URL = 'https://kvdb.io/Wh8kE7a7fkKwcAFu8krfgn/feedback';
 
   // Load existing feedback logs on mount
   useEffect(() => {
-    try {
-      const logs = localStorage.getItem('mc_feedback');
-      if (logs) {
-        setSubmittedLogs(JSON.parse(logs));
+    async function loadFeedback() {
+      setLoading(true);
+      try {
+        const res = await fetch(KVDB_URL);
+        if (res.ok) {
+          const data = await res.json();
+          if (Array.isArray(data)) {
+            setSubmittedLogs(data);
+          }
+        } else if (res.status === 404) {
+          setSubmittedLogs([]);
+        } else {
+          setError('Failed to fetch global feedback logs.');
+        }
+      } catch (e) {
+        console.error('Failed to load feedback logs', e);
+        setError('Connection error: could not load global feedback.');
+      } finally {
+        setLoading(false);
       }
-    } catch (e) {
-      console.error('Failed to load feedback logs', e);
     }
+    loadFeedback();
   }, []);
 
   const toggleCategory = (cat) => {
@@ -40,16 +58,33 @@ export default function Feedback() {
     );
   };
 
-  const handleClearHistory = () => {
+  const handleClearHistory = async () => {
+    if (!window.confirm("Are you sure you want to clear all global feedback submissions for everyone?")) {
+      return;
+    }
+    setLoading(true);
     try {
-      localStorage.removeItem('mc_feedback');
-      setSubmittedLogs([]);
-    } catch(e) {}
+      const res = await fetch(KVDB_URL, {
+        method: 'PUT',
+        body: JSON.stringify([]),
+        headers: { 'Content-Type': 'application/json' }
+      });
+      if (res.ok) {
+        setSubmittedLogs([]);
+      } else {
+        setError('Failed to clear global logs.');
+      }
+    } catch (e) {
+      setError('Connection error: failed to reset global logs.');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setError(null);
+    setSuccess(false);
 
     if (!rating) {
       setError('Please select a rating emoji before submitting.');
@@ -71,21 +106,43 @@ export default function Feedback() {
       })
     };
 
+    setSubmitting(true);
     try {
-      const updatedLogs = [newFeedback, ...submittedLogs];
-      localStorage.setItem('mc_feedback', JSON.stringify(updatedLogs));
-      setSubmittedLogs(updatedLogs);
+      // Fetch fresh list to prevent overwriting other concurrent submissions
+      let currentLogs = [];
+      try {
+        const res = await fetch(KVDB_URL);
+        if (res.ok) {
+          const data = await res.json();
+          if (Array.isArray(data)) currentLogs = data;
+        }
+      } catch (err) {
+        console.warn('Could not fetch fresh logs, appending to local state');
+        currentLogs = submittedLogs;
+      }
+
+      const updatedLogs = [newFeedback, ...currentLogs];
       
-      // Reset form & show success
-      setRating(null);
-      setSelectedCategories([]);
-      setComments('');
-      setSuccess(true);
-      
-      // Auto-hide success message after 5 seconds
-      setTimeout(() => setSuccess(false), 5000);
+      const res = await fetch(KVDB_URL, {
+        method: 'PUT',
+        body: JSON.stringify(updatedLogs),
+        headers: { 'Content-Type': 'application/json' }
+      });
+
+      if (res.ok) {
+        setSubmittedLogs(updatedLogs);
+        setRating(null);
+        setSelectedCategories([]);
+        setComments('');
+        setSuccess(true);
+        setTimeout(() => setSuccess(false), 5000);
+      } else {
+        setError('Failed to publish feedback to global database.');
+      }
     } catch (e) {
-      setError('Failed to save feedback locally.');
+      setError('Connection error: failed to submit feedback.');
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -265,6 +322,7 @@ export default function Feedback() {
             <button 
               type="submit" 
               className="btn btn-primary"
+              disabled={submitting}
               style={{
                 width: '100%',
                 padding: '12px',
@@ -277,7 +335,8 @@ export default function Feedback() {
                 marginTop: 'var(--space-2)'
               }}
             >
-              <MessageSquare size={18} /> Submit Feedback
+              <MessageSquare size={18} /> 
+              {submitting ? 'Publishing Feedback...' : 'Submit Feedback'}
             </button>
           </form>
         </div>
@@ -310,9 +369,28 @@ export default function Feedback() {
             )}
           </div>
 
-          <AnimatePresence>
-            {submittedLogs.length === 0 ? (
+          <AnimatePresence mode="wait">
+            {loading ? (
               <motion.div 
+                key="loading-fb"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                style={{
+                  textAlign: 'center',
+                  padding: 'var(--space-8) var(--space-4)',
+                  backgroundColor: 'white',
+                  borderRadius: 'var(--radius-xl)',
+                  border: '1.5px dashed var(--gray-200)',
+                  color: 'var(--color-text-muted)',
+                  fontSize: 'var(--text-sm)'
+                }}
+              >
+                🔄 Loading shared feedback logs...
+              </motion.div>
+            ) : submittedLogs.length === 0 ? (
+              <motion.div 
+                key="empty-fb"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 style={{
