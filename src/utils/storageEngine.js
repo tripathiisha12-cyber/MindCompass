@@ -1,13 +1,9 @@
-export function getActiveUser() {
-  return localStorage.getItem('mc_active_user') || 'guest';
-}
-
 export function getStorageKey() {
-  return `mc_wellness_data_${getActiveUser()}`;
+  return 'mc_wellness_data';
 }
 
 export function getResultKey() {
-  return `mc_last_result_${getActiveUser()}`;
+  return 'mc_last_result';
 }
 
 function encode(data) {
