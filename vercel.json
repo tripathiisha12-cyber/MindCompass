@@ -3,7 +3,11 @@
   "rewrites": [
     {
       "source": "/api/feedback/:path*",
-      "destination": "/api/feedback.js?path=:path*"
+      "destination": "/api/feedback?path=:path*"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
     }
   ]
 }
