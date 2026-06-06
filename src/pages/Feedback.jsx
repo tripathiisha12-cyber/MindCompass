@@ -24,24 +24,70 @@ export default function Feedback() {
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
-  const KVDB_URL = 'https://kvdb.io/Wh8kE7a7fkKwcAFu8krfgn/feedback';
+  const APP_KEY = 'i9upbo45';
+  const BASE_URL = 'https://keyvalue.immanuel.co/api/KeyVal';
+
+  function base64UrlEncode(str) {
+    const base64 = btoa(unescape(encodeURIComponent(str)));
+    return base64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
+  }
+
+  function base64UrlDecode(str) {
+    let base64 = str.replace(/-/g, '+').replace(/_/g, '/');
+    while (base64.length % 4) {
+      base64 += '=';
+    }
+    return decodeURIComponent(escape(atob(base64)));
+  }
 
   // Load existing feedback logs on mount
   useEffect(() => {
     async function loadFeedback() {
       setLoading(true);
+      setError(null);
       try {
-        const res = await fetch(KVDB_URL);
-        if (res.ok) {
-          const data = await res.json();
-          if (Array.isArray(data)) {
-            setSubmittedLogs(data);
-          }
-        } else if (res.status === 404) {
-          setSubmittedLogs([]);
-        } else {
-          setError('Failed to fetch global feedback logs.');
+        const countRes = await fetch(`${BASE_URL}/GetValue/${APP_KEY}/count`);
+        if (!countRes.ok) {
+          setError('Failed to contact global database.');
+          setLoading(false);
+          return;
         }
+        
+        const countStr = await countRes.json();
+        const count = countStr ? parseInt(countStr, 10) : 0;
+        
+        if (isNaN(count) || count <= 0) {
+          setSubmittedLogs([]);
+          setLoading(false);
+          return;
+        }
+
+        const fetchPromises = [];
+        for (let i = 0; i < count; i++) {
+          fetchPromises.push(
+            fetch(`${BASE_URL}/GetValue/${APP_KEY}/feedback-${i}`)
+              .then(res => res.ok ? res.json() : null)
+              .catch(() => null)
+          );
+        }
+
+        const results = await Promise.all(fetchPromises);
+        const logs = [];
+        for (let i = 0; i < results.length; i++) {
+          const rawValue = results[i];
+          if (rawValue) {
+            try {
+              const decodedStr = base64UrlDecode(rawValue);
+              const parsed = JSON.parse(decodedStr);
+              logs.push(parsed);
+            } catch (err) {
+              console.error('Failed to parse feedback item', i, err);
+            }
+          }
+        }
+        
+        logs.reverse();
+        setSubmittedLogs(logs);
       } catch (e) {
         console.error('Failed to load feedback logs', e);
         setError('Connection error: could not load global feedback.');
@@ -64,10 +110,8 @@ export default function Feedback() {
     }
     setLoading(true);
     try {
-      const res = await fetch(KVDB_URL, {
-        method: 'PUT',
-        body: JSON.stringify([]),
-        headers: { 'Content-Type': 'application/json' }
+      const res = await fetch(`${BASE_URL}/UpdateValue/${APP_KEY}/count/0`, {
+        method: 'POST'
       });
       if (res.ok) {
         setSubmittedLogs([]);
@@ -108,36 +152,39 @@ export default function Feedback() {
 
     setSubmitting(true);
     try {
-      // Fetch fresh list to prevent overwriting other concurrent submissions
-      let currentLogs = [];
-      try {
-        const res = await fetch(KVDB_URL);
-        if (res.ok) {
-          const data = await res.json();
-          if (Array.isArray(data)) currentLogs = data;
-        }
-      } catch (err) {
-        console.warn('Could not fetch fresh logs, appending to local state');
-        currentLogs = submittedLogs;
+      const countRes = await fetch(`${BASE_URL}/GetValue/${APP_KEY}/count`);
+      let count = 0;
+      if (countRes.ok) {
+        const countStr = await countRes.json();
+        count = countStr ? parseInt(countStr, 10) : 0;
+        if (isNaN(count)) count = 0;
       }
 
-      const updatedLogs = [newFeedback, ...currentLogs];
-      
-      const res = await fetch(KVDB_URL, {
-        method: 'PUT',
-        body: JSON.stringify(updatedLogs),
-        headers: { 'Content-Type': 'application/json' }
+      const encodedFeedback = base64UrlEncode(JSON.stringify(newFeedback));
+
+      const writeFeedbackRes = await fetch(`${BASE_URL}/UpdateValue/${APP_KEY}/feedback-${count}/${encodedFeedback}`, {
+        method: 'POST'
       });
 
-      if (res.ok) {
-        setSubmittedLogs(updatedLogs);
+      if (!writeFeedbackRes.ok) {
+        setError('Failed to upload feedback to global database.');
+        setSubmitting(false);
+        return;
+      }
+
+      const updateCountRes = await fetch(`${BASE_URL}/UpdateValue/${APP_KEY}/count/${count + 1}`, {
+        method: 'POST'
+      });
+
+      if (updateCountRes.ok) {
+        setSubmittedLogs(prev => [newFeedback, ...prev]);
         setRating(null);
         setSelectedCategories([]);
         setComments('');
         setSuccess(true);
         setTimeout(() => setSuccess(false), 5000);
       } else {
-        setError('Failed to publish feedback to global database.');
+        setError('Failed to update global database count.');
       }
     } catch (e) {
       setError('Connection error: failed to submit feedback.');
