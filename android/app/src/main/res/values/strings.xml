@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">mindcompass</string>
+    <string name="title_activity_main">mindcompass</string>
+    <string name="package_name">com.mindcompass.app</string>
+    <string name="custom_url_scheme">com.mindcompass.app</string>
+</resources>
