@@ -23,6 +23,16 @@ export default function Feedback() {
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [isDevMode, setIsDevMode] = useState(false);
+
+  const DEV_PASSCODE = 'ishaadmin';
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('dev') === 'true' || params.get('admin') === 'true') {
+      setIsDevMode(true);
+    }
+  }, []);
 
   const APP_KEY = 'i9upbo45';
   const BASE_URL = '/api/feedback';
@@ -105,6 +115,13 @@ export default function Feedback() {
   };
 
   const handleClearHistory = async () => {
+    const passcode = window.prompt("Please enter the developer passcode to clear all global feedback submissions:");
+    if (passcode === null) return;
+    if (passcode.trim() !== DEV_PASSCODE) {
+      alert("Invalid developer passcode. Access denied.");
+      return;
+    }
+
     if (!window.confirm("Are you sure you want to clear all global feedback submissions for everyone?")) {
       return;
     }
@@ -409,7 +426,7 @@ export default function Feedback() {
             <h3 style={{ fontSize: 'var(--text-lg)', fontWeight: 700, color: 'var(--slate-800)', display: 'flex', alignItems: 'center', gap: '8px', margin: 0 }}>
               📝 Past Submissions ({submittedLogs.length})
             </h3>
-            {submittedLogs.length > 0 && (
+            {isDevMode && submittedLogs.length > 0 && (
               <button 
                 onClick={handleClearHistory}
                 style={{
@@ -426,7 +443,7 @@ export default function Feedback() {
                 onMouseEnter={(e) => e.target.style.color = 'var(--crisis-red)'}
                 onMouseLeave={(e) => e.target.style.color = 'var(--gray-400)'}
               >
-                <Trash2 size={12} /> Clear History
+                <Trash2 size={12} /> Clear History (Dev Only)
               </button>
             )}
           </div>
