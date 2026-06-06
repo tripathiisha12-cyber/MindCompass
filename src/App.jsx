@@ -11,6 +11,7 @@ import SymptomChecker from '@pages/SymptomChecker';
 import CompassReport from '@pages/CompassReport';
 import ProfessionalPortal from '@pages/ProfessionalPortal';
 import WellnessTracker from '@pages/WellnessTracker';
+import Feedback from '@pages/Feedback';
 
 function ScrollToTop() {
   const { pathname } = useLocation();
@@ -36,6 +37,7 @@ function AppContent() {
             <Route path="/compass-report" element={<CompassReport />} />
             <Route path="/professional-portal" element={<ProfessionalPortal />} />
             <Route path="/wellness-tracker" element={<WellnessTracker />} />
+            <Route path="/feedback" element={<Feedback />} />
             <Route path="*" element={<Home />} />
           </Routes>
         </AnimatePresence>

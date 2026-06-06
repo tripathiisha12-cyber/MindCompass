@@ -8,6 +8,7 @@ const NAV_LINKS = [
   { path: '/symptom-check',       label: 'Symptom Check' },
   { path: '/professional-portal', label: 'Find Help' },
   { path: '/wellness-tracker',    label: 'Daily Tracker' },
+  { path: '/feedback',            label: 'Feedback' },
 ];
 
 export default function Navbar() {
