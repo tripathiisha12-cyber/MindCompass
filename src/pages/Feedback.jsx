@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { MessageSquare, Star, CheckCircle, Heart, Trash2 } from 'lucide-react';
+import { MessageSquare, Star, CheckCircle, Heart, Trash2, AlertCircle } from 'lucide-react';
 
 const EMOJI_RATINGS = [
   { emoji: '😢', label: 'Needs work', value: 1 },
@@ -25,7 +25,7 @@ export default function Feedback() {
   const [submitting, setSubmitting] = useState(false);
 
   const APP_KEY = 'i9upbo45';
-  const BASE_URL = 'https://keyvalue.immanuel.co/api/KeyVal';
+  const BASE_URL = '/api/feedback';
 
   function base64UrlEncode(str) {
     const base64 = btoa(unescape(encodeURIComponent(str)));
@@ -220,10 +220,25 @@ export default function Feedback() {
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0 }}
-                style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: 'var(--space-6)' }}
+                style={{ 
+                  display: 'flex', 
+                  flexDirection: 'column', 
+                  gap: '10px', 
+                  padding: '16px', 
+                  backgroundColor: '#f0fdf4', 
+                  border: '1.5px solid #bbf7d0', 
+                  color: '#166534', 
+                  borderRadius: '12px', 
+                  marginBottom: 'var(--space-6)' 
+                }}
               >
-                <CheckCircle size={18} style={{ flexShrink: 0 }} />
-                <span>Thank you! Your feedback has been saved successfully. 💚</span>
+                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                  <CheckCircle size={20} style={{ color: '#15803d', flexShrink: 0 }} />
+                  <span style={{ fontWeight: 700, fontSize: '0.98rem' }}>Isha says thank you! 🌸</span>
+                </div>
+                <p style={{ margin: 0, fontSize: '0.88rem', lineHeight: '1.5', color: '#14532d' }}>
+                  "Thank you so much! I've received your thoughts and am sending you a warm virtual hug! Your feedback means the world to me and helps make MindCompass better for everyone." — Isha 💚
+                </p>
               </motion.div>
             )}
             {error && (
@@ -472,7 +487,7 @@ export default function Feedback() {
                           <span style={{ fontSize: '1.75rem' }}>{ratingEmoji}</span>
                           <div>
                             <div style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--slate-800)' }}>
-                              {log.userName}
+                              {log.userName || log.name || 'Anonymous'}
                             </div>
                             <div style={{ fontSize: '0.72rem', color: 'var(--color-text-subtle)' }}>
                               {log.timestamp}
