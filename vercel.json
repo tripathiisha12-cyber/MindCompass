@@ -3,7 +3,7 @@
   "rewrites": [
     {
       "source": "/api/feedback/:path*",
-      "destination": "https://keyvalue.immanuel.co/api/KeyVal/:path*"
+      "destination": "/api/feedback.js"
     }
   ]
 }
