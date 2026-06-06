@@ -17,7 +17,7 @@ export default function Feedback() {
   const [hoverRating, setHoverRating] = useState(null);
   const [selectedCategories, setSelectedCategories] = useState([]);
   const [comments, setComments] = useState('');
-  const [userName, setUserName] = useState('Isha'); // Default personalized for Isha
+  const [userName, setUserName] = useState(''); // Default empty for users to type their name
   const [submittedLogs, setSubmittedLogs] = useState([]);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState(null);
@@ -99,7 +99,7 @@ export default function Feedback() {
             Feedback Portal
           </span>
           <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: 'var(--text-4xl)', color: 'var(--slate-800)', marginTop: 'var(--space-3)', fontWeight: 700 }}>
-            Share Your Thoughts, Isha! 🌸
+            Share your thoughts with Isha 🌸
           </h1>
           <p style={{ color: 'var(--color-text-muted)', fontSize: 'var(--text-base)', marginTop: 'var(--space-2)' }}>
             We'd love to hear your feedback on the new mascot, AI wellness assistant, and general features.
